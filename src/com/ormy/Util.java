@@ -3,10 +3,10 @@ package com.ormy;
 import android.util.Log;
 
 public final class Util {
-	protected static void Log(Exception e) {
-		String TAG = "ORMy";
-		Log.e(TAG, e.toString());
-		for (StackTraceElement st : e.getStackTrace())
-			Log.e(TAG, st.toString());
-	}
+    protected static void Log(Exception e) {
+	String TAG = "ORMy";
+	Log.e(TAG, e.toString());
+	for (StackTraceElement st : e.getStackTrace())
+	    Log.e(TAG, st.toString());
+    }
 }
