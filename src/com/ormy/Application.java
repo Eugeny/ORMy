@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import com.ormy.annotations.Table;
+
+import com.ormy.annotations.Table;
+
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -20,14 +24,12 @@ public class Application extends android.app.Application {
 		database = new Database(this);
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static List<Class<? extends Model<?>>> getModels(Context context) {
-		List<Class<? extends Model<?>>> res =
-		        new ArrayList<Class<? extends Model<?>>>();
+		List<Class<? extends Model<?>>> res = new ArrayList<Class<? extends Model<?>>>();
 		try {
-			String path =
-			        context.getPackageManager().getApplicationInfo(
-			            context.getPackageName(), 0).sourceDir;
+			String path = context.getPackageManager().getApplicationInfo(
+					context.getPackageName(), 0).sourceDir;
 			DexFile dexfile = new DexFile(path);
 			Enumeration<String> entries = dexfile.entries();
 			while (entries.hasMoreElements()) {
@@ -35,16 +37,15 @@ public class Application extends android.app.Application {
 				Class cls = null;
 				Class sc = null;
 				try {
-					cls =
-					        Class.forName(name, true, context.getClass()
-					            .getClassLoader());
+					cls = Class.forName(name, true, context.getClass()
+							.getClassLoader());
 					sc = cls.getSuperclass();
 				} catch (ClassNotFoundException e) {
 					Util.Log(e);
 				}
 
 				if ((cls == null) || (sc == null)
-				        || (!cls.getSuperclass().equals(Model.class)))
+						|| (!cls.isAnnotationPresent(Table.class)))
 					continue;
 				res.add(cls);
 			}
@@ -58,8 +59,8 @@ public class Application extends android.app.Application {
 	public static Bundle getMetaData(Context context) {
 		PackageManager pm = context.getPackageManager();
 		try {
-			ApplicationInfo ai =
-			        pm.getApplicationInfo(context.getPackageName(), 128);
+			ApplicationInfo ai = pm.getApplicationInfo(
+					context.getPackageName(), 128);
 			return ai.metaData;
 		} catch (Exception e) {
 			Util.Log(e);

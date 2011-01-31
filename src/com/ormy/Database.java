@@ -5,6 +5,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.ormy.annotations.Column;
+import com.ormy.annotations.SortBy;
+import com.ormy.annotations.SortBy;
+
+import com.ormy.annotations.Column;
+
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -18,7 +24,7 @@ public class Database {
 	public static int DATABASE_VERSION = 0;
 	public static String DATABASE_NAME = "x.db";
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings("rawtypes")
 	private static HashMap<Class<? extends Model>, HashMap<Long, Model<?>>> objects =
 	        new HashMap<Class<? extends Model>, HashMap<Long, Model<?>>>();
 

@@ -20,7 +20,7 @@ public abstract class Model<T> implements Comparable<Model<T>> {
 		mTable = Database.getTableName((Class<? extends Model<?>>) getClass());
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static <E extends Model> E load(Context ctx,
 	                                       Class<? extends Model> cls, long id) {
 		E x = (E) Application.database.fetchObject(cls, id);
@@ -64,7 +64,7 @@ public abstract class Model<T> implements Comparable<Model<T>> {
 		return hashCode() != mOldHash;
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void load() {
 		Cursor c =
 		        mDB.sql.query(mTable, null, "id=" + id, null, null, null, null);
