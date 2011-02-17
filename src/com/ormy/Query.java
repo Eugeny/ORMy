@@ -18,7 +18,8 @@ public class Query<T> {
     }
 
     private String resolveField(String field) {
-	if (field.endsWith("!") || field.endsWith(">") || field.startsWith("<"))
+	if (field.endsWith("!") || field.endsWith(">") || field.endsWith("<")
+		|| field.endsWith("%"))
 	    field = field.substring(0, field.length() - 1);
 	return field;
     }
@@ -30,10 +31,12 @@ public class Query<T> {
 	    return ">";
 	if (field.endsWith("<"))
 	    return "<";
+	if (field.endsWith("%"))
+	    return " LIKE ";
 	return "=";
     }
 
-    public Query<T> filter(String field, String value) {
+    public Query<T> filter(String field, String value) { 
 	if (mQuery.length() != 0)
 	    mQuery += " AND ";
 	mQuery += resolveField(field) + resolveOperation(field) + "?";
@@ -64,8 +67,8 @@ public class Query<T> {
 	int r = 0;
 	try {
 	    c = mDB.sql.query(Database.getTableName(E),
-		    new String[] { "COUNT(*)" }, mQuery, (String[]) mArgs
-			    .toArray(new String[0]), null, null, null);
+		new String[] { "COUNT(*)" }, mQuery, (String[]) mArgs
+		    .toArray(new String[0]), null, null, null);
 	    c.moveToFirst();
 	    r = c.getInt(0);
 	} catch (Exception e) {
@@ -81,15 +84,15 @@ public class Query<T> {
 	Cursor c = null;
 	ArrayList<T> r = new ArrayList<T>();
 
-	c = mDB.sql.query(Database.getTableName(E), new String[] { "id" },
-		mQuery, (String[]) mArgs.toArray(new String[0]), null, null,
-		Database.getSorting(E));
+	c = mDB.sql.query(Database.getTableName(E), null, mQuery,
+	    (String[]) mArgs.toArray(new String[0]), null, null, Database
+		.getSorting(E));
 	if (c.moveToFirst()) {
 	    do {
 		try {
-		    r.add((T) Model.load(mDB.mContext, E, c.getLong(0)));
-		} catch (Exception e) {
-		    Log.e(TAG, e.toString());
+		    r.add((T) Model.load(mDB.mContext, E, c));
+		} catch (Throwable e) {
+		    Util.Log(e);
 		}
 	    } while (c.moveToNext());
 	}
@@ -98,16 +101,28 @@ public class Query<T> {
 	return r;
     }
 
+    @SuppressWarnings("unchecked")
     public T get() {
-	try {
-	    return list().get(0);
-	} catch (IndexOutOfBoundsException e) {
-	    return null;
+	Cursor c = null;
+	T r = null;
+
+	c = mDB.sql.query(Database.getTableName(E), null, mQuery,
+	    (String[]) mArgs.toArray(new String[0]), null, null, Database
+		.getSorting(E));
+	if (c.moveToFirst()) {
+	    try {
+		r = (T) Model.load(mDB.mContext, E, c);
+	    } catch (Throwable e) {
+		Util.Log(e);
+	    }
 	}
+	c.close();
+
+	return r;
     }
 
     public void delete() {
 	mDB.sql.delete(Database.getTableName(E), mQuery, (String[]) mArgs
-		.toArray(new String[0]));
+	    .toArray(new String[0]));
     }
 }

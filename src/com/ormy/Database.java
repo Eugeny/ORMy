@@ -1,5 +1,6 @@
 package com.ormy;
 
+import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +23,7 @@ public class Database {
     public static String DATABASE_NAME = "x.db";
 
     @SuppressWarnings("unchecked")
-    private static HashMap<Class<? extends Model>, HashMap<Long, Model<?>>> objects = new HashMap<Class<? extends Model>, HashMap<Long, Model<?>>>();
+    private static HashMap<Class<? extends Model>, HashMap<Long, SoftReference<Model<?>>>> objects = new HashMap<Class<? extends Model>, HashMap<Long, SoftReference<Model<?>>>>();
 
     public boolean initializing = false;
 
@@ -52,8 +53,10 @@ public class Database {
 
     public void registerObject(Model<?> obj) {
 	if (!objects.containsKey(obj.getClass()))
-	    objects.put(obj.getClass(), new HashMap<Long, Model<?>>());
-	objects.get(obj.getClass()).put(obj.id, obj);
+	    objects.put(obj.getClass(),
+		new HashMap<Long, SoftReference<Model<?>>>());
+	objects.get(obj.getClass()).put(obj.id,
+	    new SoftReference<Model<?>>(obj));
     }
 
     public void unregisterObject(Model<?> obj) {
@@ -62,7 +65,10 @@ public class Database {
 
     public Model<?> fetchObject(Class<?> cls, long id) {
 	try {
-	    return objects.get(cls).get(id);
+	    Model<?> o = objects.get(cls).get(id).get();
+	    if (o == null)
+		objects.get(cls).remove(id);
+	    return o;
 	} catch (Exception e) {
 	    return null;
 	}
@@ -98,7 +104,7 @@ public class Database {
 
 	public OpenHelper(Context ctx) {
 	    super(ctx, Application.getMetaData(ctx).getString("ORMY_DATABASE"),
-		    null, Application.getMetaData(ctx).getInt("ORMY_VERSION"));
+		null, Application.getMetaData(ctx).getInt("ORMY_VERSION"));
 	    mContext = ctx;
 	}
 

@@ -28,7 +28,7 @@ public class Application extends android.app.Application {
 	List<Class<? extends Model<?>>> res = new ArrayList<Class<? extends Model<?>>>();
 	try {
 	    String path = context.getPackageManager().getApplicationInfo(
-		    context.getPackageName(), 0).sourceDir;
+		context.getPackageName(), 0).sourceDir;
 	    DexFile dexfile = new DexFile(path);
 	    Enumeration<String> entries = dexfile.entries();
 	    while (entries.hasMoreElements()) {
@@ -37,18 +37,19 @@ public class Application extends android.app.Application {
 		Class sc = null;
 		try {
 		    cls = Class.forName(name, true, context.getClass()
-			    .getClassLoader());
+			.getClassLoader());
 		    sc = cls.getSuperclass();
-		} catch (ClassNotFoundException e) {
+		} catch (Error e) {
+		} catch (Exception e) {
 		    Util.Log(e);
 		}
-
+ 
 		if ((cls == null) || (sc == null)
 			|| (!cls.isAnnotationPresent(Table.class)))
 		    continue;
 		res.add(cls);
 	    }
-
+ 
 	} catch (Exception e) {
 	    Util.Log(e);
 	}
@@ -59,7 +60,7 @@ public class Application extends android.app.Application {
 	PackageManager pm = context.getPackageManager();
 	try {
 	    ApplicationInfo ai = pm.getApplicationInfo(
-		    context.getPackageName(), 128);
+		context.getPackageName(), 128);
 	    return ai.metaData;
 	} catch (Exception e) {
 	    Util.Log(e);

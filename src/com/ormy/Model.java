@@ -37,6 +37,24 @@ public abstract class Model<T> implements Comparable<Model<T>> {
 	return x;
     }
 
+    @SuppressWarnings("unchecked")
+    public static <E extends Model> E load(Context ctx,
+	    Class<? extends Model> cls, Cursor c) { 
+	long id = c.getLong(0);
+	E x = (E) Application.database.fetchObject(cls, id);
+	if (x == null) {
+	    try {
+		x = (E) cls.getConstructors()[0].newInstance(ctx);
+		x.id = id;
+		x.load(c);
+		Application.database.registerObject(x);
+	    } catch (Exception e) {
+		Util.Log(e);
+	    }
+	}
+	return x;
+    }
+
     public static <E> Query<E> get(Class<? extends Model<E>> cls) {
 	return Application.database.get(cls);
     }
@@ -67,30 +85,34 @@ public abstract class Model<T> implements Comparable<Model<T>> {
     }
 
     @SuppressWarnings("unchecked")
+    public void load(Cursor c) {
+	for (Field f : Database.getDBFields(getClass())) {
+	    String ff = f.getName();
+	    try {
+		if (Model.class.isAssignableFrom(f.getType())) {
+		    f.set(this, load(mContext, (Class<? extends Model>) f
+			.getType(), c.getLong(c.getColumnIndexOrThrow(ff))));
+		} else {
+		    if (f.getType().equals(String.class))
+			f.set(this, c.getString(c.getColumnIndexOrThrow(ff)));
+		    if (f.getType().equals(byte[].class))
+			f.set(this, c.getBlob(c.getColumnIndexOrThrow(ff)));
+		    if (f.getType().equals(int.class))
+			f.set(this, c.getInt(c.getColumnIndexOrThrow(ff)));
+		    if (f.getType().equals(long.class))
+			f.set(this, c.getLong(c.getColumnIndexOrThrow(ff)));
+		}
+	    } catch (Exception e) {
+		Util.Log(e);
+	    }
+	}
+    }
+
     public void load() {
 	Cursor c = mDB.sql.query(mTable, null, "id=" + id, null, null, null,
-		null);
+	    null);
 	if (c.moveToFirst()) {
-	    for (Field f : Database.getDBFields(getClass())) {
-		String ff = f.getName();
-		try {
-		    if (Model.class.isAssignableFrom(f.getType())) {
-			f.set(this, load(mContext, (Class<? extends Model>) f
-				.getType(), c.getLong(c.getColumnIndex(ff))));
-		    } else {
-			if (f.getType().equals(String.class))
-			    f.set(this, c.getString(c.getColumnIndex(ff)));
-			if (f.getType().equals(byte[].class))
-			    f.set(this, c.getBlob(c.getColumnIndex(ff)));
-			if (f.getType().equals(int.class))
-			    f.set(this, c.getInt(c.getColumnIndex(ff)));
-			if (f.getType().equals(long.class))
-			    f.set(this, c.getLong(c.getColumnIndex(ff)));
-		    }
-		} catch (Exception e) {
-		    Util.Log(e);
-		}
-	    }
+	    load(c);
 	}
 	c.close();
 	mOldHash = hashCode();
