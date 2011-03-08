@@ -5,4 +5,5 @@ import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SortBy {
+    boolean reverse() default false;
 }

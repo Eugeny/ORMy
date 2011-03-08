@@ -32,6 +32,7 @@ public abstract class Model<T> implements Comparable<Model<T>> {
 		Application.database.registerObject(x);
 	    } catch (Exception e) {
 		Util.Log(e);
+		return null;
 	    }
 	}
 	return x;
@@ -39,7 +40,7 @@ public abstract class Model<T> implements Comparable<Model<T>> {
 
     @SuppressWarnings("unchecked")
     public static <E extends Model> E load(Context ctx,
-	    Class<? extends Model> cls, Cursor c) { 
+	    Class<? extends Model> cls, Cursor c) {
 	long id = c.getLong(0);
 	E x = (E) Application.database.fetchObject(cls, id);
 	if (x == null) {
@@ -50,6 +51,7 @@ public abstract class Model<T> implements Comparable<Model<T>> {
 		Application.database.registerObject(x);
 	    } catch (Exception e) {
 		Util.Log(e);
+		return null;
 	    }
 	}
 	return x;
@@ -113,7 +115,8 @@ public abstract class Model<T> implements Comparable<Model<T>> {
 	    null);
 	if (c.moveToFirst()) {
 	    load(c);
-	}
+	} else
+	    throw new ArrayStoreException("Invalid ID");
 	c.close();
 	mOldHash = hashCode();
     }

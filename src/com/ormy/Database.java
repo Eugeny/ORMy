@@ -60,7 +60,13 @@ public class Database {
     }
 
     public void unregisterObject(Model<?> obj) {
-	objects.get(obj.getClass()).remove(obj.id);
+	if (objects.containsKey(obj.getClass()))
+	    objects.get(obj.getClass()).remove(obj.id);
+    }
+
+    public void unregisterObject(Class<? extends Model> cls, long id) {
+	if (objects.containsKey(cls))
+	    objects.get(cls).remove(id);
     }
 
     public Model<?> fetchObject(Class<?> cls, long id) {
@@ -88,11 +94,15 @@ public class Database {
     }
 
     protected static String getSorting(Class<?> cls) {
+	String r = "";
 	for (Field f : cls.getFields()) {
 	    if (f.isAnnotationPresent(SortBy.class))
-		return f.getName() + " ASC";
+		r += (r.length() == 0 ? "" : " ,")
+			+ f.getName()
+			+ (f.getAnnotation(SortBy.class).reverse() ? " DESC"
+				: " ASC");
 	}
-	return null;
+	return r;
     }
 
     public <E> Query<E> get(Class<? extends Model<E>> cls) {

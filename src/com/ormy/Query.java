@@ -11,10 +11,12 @@ public class Query<T> {
     private ArrayList<String> mArgs = new ArrayList<String>();
     private Database mDB;
     private Class<? extends Model<?>> E;
+    private String mSort;
 
     protected Query(Database db, Class<? extends Model<?>> cls) {
 	mDB = db;
 	E = cls;
+	mSort = Database.getSorting(E);
     }
 
     private String resolveField(String field) {
@@ -36,7 +38,7 @@ public class Query<T> {
 	return "=";
     }
 
-    public Query<T> filter(String field, String value) { 
+    public Query<T> filter(String field, String value) {
 	if (mQuery.length() != 0)
 	    mQuery += " AND ";
 	mQuery += resolveField(field) + resolveOperation(field) + "?";
@@ -55,6 +57,11 @@ public class Query<T> {
 	if (mQuery.length() != 0)
 	    mQuery += " AND ";
 	mQuery += resolveField(field) + resolveOperation(field) + value.id;
+	return this;
+    }
+
+    public Query<T> sort(String sort) {
+	mSort = sort;
 	return this;
     }
 
@@ -85,8 +92,7 @@ public class Query<T> {
 	ArrayList<T> r = new ArrayList<T>();
 
 	c = mDB.sql.query(Database.getTableName(E), null, mQuery,
-	    (String[]) mArgs.toArray(new String[0]), null, null, Database
-		.getSorting(E));
+	    (String[]) mArgs.toArray(new String[0]), null, null, mSort);
 	if (c.moveToFirst()) {
 	    do {
 		try {
@@ -107,8 +113,7 @@ public class Query<T> {
 	T r = null;
 
 	c = mDB.sql.query(Database.getTableName(E), null, mQuery,
-	    (String[]) mArgs.toArray(new String[0]), null, null, Database
-		.getSorting(E));
+	    (String[]) mArgs.toArray(new String[0]), null, null, mSort);
 	if (c.moveToFirst()) {
 	    try {
 		r = (T) Model.load(mDB.mContext, E, c);
