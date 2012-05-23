@@ -22,8 +22,10 @@ public class Database {
     public static int DATABASE_VERSION = 0;
     public static String DATABASE_NAME = "x.db";
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     private static HashMap<Class<? extends Model>, HashMap<Long, SoftReference<Model<?>>>> objects = new HashMap<Class<? extends Model>, HashMap<Long, SoftReference<Model<?>>>>();
+
+    private List<DatabaseObserver> observers = new ArrayList<DatabaseObserver>();
 
     public boolean initializing = false;
 
@@ -53,10 +55,8 @@ public class Database {
 
     public void registerObject(Model<?> obj) {
 	if (!objects.containsKey(obj.getClass()))
-	    objects.put(obj.getClass(),
-		new HashMap<Long, SoftReference<Model<?>>>());
-	objects.get(obj.getClass()).put(obj.id,
-	    new SoftReference<Model<?>>(obj));
+	    objects.put(obj.getClass(), new HashMap<Long, SoftReference<Model<?>>>());
+	objects.get(obj.getClass()).put(obj.id, new SoftReference<Model<?>>(obj));
     }
 
     public void unregisterObject(Model<?> obj) {
@@ -64,9 +64,23 @@ public class Database {
 	    objects.get(obj.getClass()).remove(obj.id);
     }
 
+    @SuppressWarnings("rawtypes")
     public void unregisterObject(Class<? extends Model> cls, long id) {
 	if (objects.containsKey(cls))
 	    objects.get(cls).remove(id);
+    }
+
+    public void registerObserver(DatabaseObserver o) {
+	observers.add(o);
+    }
+
+    public void unregisterObserver(DatabaseObserver o) {
+	observers.remove(o);
+    }
+
+    public void notifyUpdated(Model<?> sender) {
+	for (DatabaseObserver o : observers)
+	    o.databaseObjectUpdated(sender);
     }
 
     public Model<?> fetchObject(Class<?> cls, long id) {
@@ -97,10 +111,8 @@ public class Database {
 	String r = "";
 	for (Field f : cls.getFields()) {
 	    if (f.isAnnotationPresent(SortBy.class))
-		r += (r.length() == 0 ? "" : " ,")
-			+ f.getName()
-			+ (f.getAnnotation(SortBy.class).reverse() ? " DESC"
-				: " ASC");
+		r += (r.length() == 0 ? "" : " ,") + f.getName()
+			+ (f.getAnnotation(SortBy.class).reverse() ? " DESC" : " ASC");
 	}
 	return r;
     }
@@ -113,8 +125,8 @@ public class Database {
 	private Context mContext = null;
 
 	public OpenHelper(Context ctx) {
-	    super(ctx, Application.getMetaData(ctx).getString("ORMY_DATABASE"),
-		null, Application.getMetaData(ctx).getInt("ORMY_VERSION"));
+	    super(ctx, Application.getMetaData(ctx).getString("ORMY_DATABASE"), null,
+		    Application.getMetaData(ctx).getInt("ORMY_VERSION"));
 	    mContext = ctx;
 	}
 
@@ -137,8 +149,7 @@ public class Database {
 	}
 
 	public String getSQL(Class<? extends Model<?>> m) {
-	    String sql = "CREATE TABLE " + Database.getTableName(m)
-		    + " (id INTEGER PRIMARY KEY AUTOINCREMENT";
+	    String sql = "CREATE TABLE " + Database.getTableName(m) + " (id INTEGER PRIMARY KEY AUTOINCREMENT";
 	    for (Field f : Database.getDBFields(m))
 		if (f.isAnnotationPresent(Column.class))
 		    try {

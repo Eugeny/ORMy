@@ -14,7 +14,7 @@ import com.ormy.annotations.Table;
 import dalvik.system.DexFile;
 
 public class Application extends android.app.Application {
-    protected static Database database = null;
+    private static Database database = null;
     public static Context dummyContext = null;
 
     public void onCreate() {
@@ -23,12 +23,11 @@ public class Application extends android.app.Application {
 	database = new Database(this);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static List<Class<? extends Model<?>>> getModels(Context context) {
 	List<Class<? extends Model<?>>> res = new ArrayList<Class<? extends Model<?>>>();
 	try {
-	    String path = context.getPackageManager().getApplicationInfo(
-		context.getPackageName(), 0).sourceDir;
+	    String path = context.getPackageManager().getApplicationInfo(context.getPackageName(), 0).sourceDir;
 	    DexFile dexfile = new DexFile(path);
 	    Enumeration<String> entries = dexfile.entries();
 	    while (entries.hasMoreElements()) {
@@ -36,20 +35,18 @@ public class Application extends android.app.Application {
 		Class cls = null;
 		Class sc = null;
 		try {
-		    cls = Class.forName(name, true, context.getClass()
-			.getClassLoader());
+		    cls = Class.forName(name, true, context.getClass().getClassLoader());
 		    sc = cls.getSuperclass();
 		} catch (Error e) {
 		} catch (Exception e) {
 		    Util.Log(e);
 		}
- 
-		if ((cls == null) || (sc == null)
-			|| (!cls.isAnnotationPresent(Table.class)))
+
+		if ((cls == null) || (sc == null) || (!cls.isAnnotationPresent(Table.class)))
 		    continue;
 		res.add(cls);
 	    }
- 
+
 	} catch (Exception e) {
 	    Util.Log(e);
 	}
@@ -59,12 +56,19 @@ public class Application extends android.app.Application {
     public static Bundle getMetaData(Context context) {
 	PackageManager pm = context.getPackageManager();
 	try {
-	    ApplicationInfo ai = pm.getApplicationInfo(
-		context.getPackageName(), 128);
+	    ApplicationInfo ai = pm.getApplicationInfo(context.getPackageName(), 128);
 	    return ai.metaData;
 	} catch (Exception e) {
 	    Util.Log(e);
 	}
 	return null;
+    }
+
+    public static Database getDatabase() {
+	return database;
+    }
+
+    public static void resetDatabase() {
+	database = new Database(dummyContext);
     }
 }
